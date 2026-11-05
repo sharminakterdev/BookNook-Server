@@ -253,53 +253,53 @@ app.patch("/books/:id", verifyToken, async (req, res) => {
 
 // ==================== DELETE BOOK ====================
 
-// app.delete("/books/:id", verifyToken, async (req, res) => {
-//   try {
-//     const { id } = req.params;
+app.delete("/books/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//     if (!ObjectId.isValid(id)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid book ID",
-//       });
-//     }
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
 
-//     const book = await booksCollection.findOne({
-//       _id: new ObjectId(id),
-//       userId: req.user.sub,
-//     });
+    const book = await booksCollection.findOne({
+      _id: new ObjectId(id),
+      userId: req.user.sub,
+    });
 
-//     if (!book) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Book not found or you are not the owner",
-//       });
-//     }
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found or you are not the owner",
+      });
+    }
 
-//     if (book.availableCopies !== book.totalCopies) {
-//       return res.status(409).json({
-//         success: false,
-//         message: "Cannot delete a book while copies are borrowed",
-//       });
-//     }
+    if (book.availableCopies !== book.totalCopies) {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete a book while copies are borrowed",
+      });
+    }
 
-//     await booksCollection.deleteOne({
-//       _id: new ObjectId(id),
-//       userId: req.user.sub,
-//     });
+    await booksCollection.deleteOne({
+      _id: new ObjectId(id),
+      userId: req.user.sub,
+    });
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Book deleted successfully!",
-//     });
-//   } catch (error) {
-//     console.error("Delete Book Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to delete book",
-//     });
-//   }
-// });
+    res.status(200).json({
+      success: true,
+      message: "Book deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Delete Book Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete book",
+    });
+  }
+});
 
 // ==================== BORROW BOOK ====================
 
