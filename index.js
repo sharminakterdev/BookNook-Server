@@ -253,255 +253,255 @@ app.patch("/books/:id", verifyToken, async (req, res) => {
 
 // ==================== DELETE BOOK ====================
 
-app.delete("/books/:id", verifyToken, async (req, res) => {
-  try {
-    const { id } = req.params;
+// app.delete("/books/:id", verifyToken, async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid book ID",
-      });
-    }
+//     if (!ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid book ID",
+//       });
+//     }
 
-    const book = await booksCollection.findOne({
-      _id: new ObjectId(id),
-      userId: req.user.sub,
-    });
+//     const book = await booksCollection.findOne({
+//       _id: new ObjectId(id),
+//       userId: req.user.sub,
+//     });
 
-    if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found or you are not the owner",
-      });
-    }
+//     if (!book) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Book not found or you are not the owner",
+//       });
+//     }
 
-    if (book.availableCopies !== book.totalCopies) {
-      return res.status(409).json({
-        success: false,
-        message: "Cannot delete a book while copies are borrowed",
-      });
-    }
+//     if (book.availableCopies !== book.totalCopies) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Cannot delete a book while copies are borrowed",
+//       });
+//     }
 
-    await booksCollection.deleteOne({
-      _id: new ObjectId(id),
-      userId: req.user.sub,
-    });
+//     await booksCollection.deleteOne({
+//       _id: new ObjectId(id),
+//       userId: req.user.sub,
+//     });
 
-    res.status(200).json({
-      success: true,
-      message: "Book deleted successfully!",
-    });
-  } catch (error) {
-    console.error("Delete Book Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete book",
-    });
-  }
-});
+//     res.status(200).json({
+//       success: true,
+//       message: "Book deleted successfully!",
+//     });
+//   } catch (error) {
+//     console.error("Delete Book Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to delete book",
+//     });
+//   }
+// });
 
 // ==================== BORROW BOOK ====================
 
-app.post("/borrows", verifyToken, async (req, res) => {
-  let reservedBookId = null;
+// app.post("/borrows", verifyToken, async (req, res) => {
+//   let reservedBookId = null;
 
-  try {
-    const { bookId, borrowDate, returnDate } = req.body;
-    const userId = req.user.sub;
+//   try {
+//     const { bookId, borrowDate, returnDate } = req.body;
+//     const userId = req.user.sub;
 
-    if (!ObjectId.isValid(bookId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid book ID",
-      });
-    }
+//     if (!ObjectId.isValid(bookId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid book ID",
+//       });
+//     }
 
-    const borrowDateValue = new Date(borrowDate);
-    const returnDateValue = new Date(returnDate);
+//     const borrowDateValue = new Date(borrowDate);
+//     const returnDateValue = new Date(returnDate);
 
-    if (
-      !borrowDate ||
-      !returnDate ||
-      Number.isNaN(borrowDateValue.getTime()) ||
-      Number.isNaN(returnDateValue.getTime()) ||
-      returnDateValue <= borrowDateValue
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide valid borrow and return dates",
-      });
-    }
+//     if (
+//       !borrowDate ||
+//       !returnDate ||
+//       Number.isNaN(borrowDateValue.getTime()) ||
+//       Number.isNaN(returnDateValue.getTime()) ||
+//       returnDateValue <= borrowDateValue
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Please provide valid borrow and return dates",
+//       });
+//     }
 
-    const bookObjectId = new ObjectId(bookId);
+//     const bookObjectId = new ObjectId(bookId);
 
-    const existingBorrow = await borrowsCollection.findOne({
-      bookId: bookObjectId,
-      userId,
-      active: true,
-    });
+//     const existingBorrow = await borrowsCollection.findOne({
+//       bookId: bookObjectId,
+//       userId,
+//       active: true,
+//     });
 
-    if (existingBorrow) {
-      return res.status(409).json({
-        success: false,
-        message: "You have already borrowed this book",
-      });
-    }
+//     if (existingBorrow) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "You have already borrowed this book",
+//       });
+//     }
 
-    const stockResult = await booksCollection.updateOne(
-      {
-        _id: bookObjectId,
-        availableCopies: { $gt: 0 },
-      },
-      {
-        $inc: { availableCopies: -1 },
-      }
-    );
+//     const stockResult = await booksCollection.updateOne(
+//       {
+//         _id: bookObjectId,
+//         availableCopies: { $gt: 0 },
+//       },
+//       {
+//         $inc: { availableCopies: -1 },
+//       }
+//     );
 
-    if (stockResult.modifiedCount === 0) {
-      return res.status(409).json({
-        success: false,
-        message: "This book is not available",
-      });
-    }
+//     if (stockResult.modifiedCount === 0) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "This book is not available",
+//       });
+//     }
 
-    reservedBookId = bookObjectId;
+//     reservedBookId = bookObjectId;
 
-    const book = await booksCollection.findOne({
-      _id: bookObjectId,
-    });
+//     const book = await booksCollection.findOne({
+//       _id: bookObjectId,
+//     });
 
-    const borrowData = {
-      bookId: bookObjectId,
-      bookTitle: book.title,
-      bookImage: book.image,
-      userId,
-      userName: req.user.name,
-      userEmail: req.user.email,
-      borrowDate: borrowDateValue,
-      returnDate: returnDateValue,
-      active: true,
-      createdAt: new Date(),
-    };
+//     const borrowData = {
+//       bookId: bookObjectId,
+//       bookTitle: book.title,
+//       bookImage: book.image,
+//       userId,
+//       userName: req.user.name,
+//       userEmail: req.user.email,
+//       borrowDate: borrowDateValue,
+//       returnDate: returnDateValue,
+//       active: true,
+//       createdAt: new Date(),
+//     };
 
-    const result = await borrowsCollection.insertOne(borrowData);
+//     const result = await borrowsCollection.insertOne(borrowData);
 
-    reservedBookId = null;
+//     reservedBookId = null;
 
-    res.status(201).json({
-      success: true,
-      message: "Book borrowed successfully!",
-      insertedId: result.insertedId,
-    });
-  } catch (error) {
-    if (reservedBookId) {
-      await booksCollection.updateOne(
-        { _id: reservedBookId },
-        { $inc: { availableCopies: 1 } }
-      );
-    }
+//     res.status(201).json({
+//       success: true,
+//       message: "Book borrowed successfully!",
+//       insertedId: result.insertedId,
+//     });
+//   } catch (error) {
+//     if (reservedBookId) {
+//       await booksCollection.updateOne(
+//         { _id: reservedBookId },
+//         { $inc: { availableCopies: 1 } }
+//       );
+//     }
 
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: "You have already borrowed this book",
-      });
-    }
+//     if (error.code === 11000) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "You have already borrowed this book",
+//       });
+//     }
 
-    console.error("Borrow Book Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to borrow book",
-    });
-  }
-});
+//     console.error("Borrow Book Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to borrow book",
+//     });
+//   }
+// });
 
-// ==================== GET MY BORROWS ====================
+// // ==================== GET MY BORROWS ====================
 
-app.get("/borrows", verifyToken, async (req, res) => {
-  try {
-    const borrows = await borrowsCollection
-      .find({
-        userId: req.user.sub,
-        active: true,
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
+// app.get("/borrows", verifyToken, async (req, res) => {
+//   try {
+//     const borrows = await borrowsCollection
+//       .find({
+//         userId: req.user.sub,
+//         active: true,
+//       })
+//       .sort({ createdAt: -1 })
+//       .toArray();
 
-    res.status(200).json({
-      success: true,
-      data: borrows,
-    });
-  } catch (error) {
-    console.error("Get Borrows Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch borrowed books",
-    });
-  }
-});
+//     res.status(200).json({
+//       success: true,
+//       data: borrows,
+//     });
+//   } catch (error) {
+//     console.error("Get Borrows Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch borrowed books",
+//     });
+//   }
+// });
 
-// ==================== RETURN BOOK ====================
+// // ==================== RETURN BOOK ====================
 
-app.delete("/borrows/:id", verifyToken, async (req, res) => {
-  try {
-    const { id } = req.params;
+// app.delete("/borrows/:id", verifyToken, async (req, res) => {
+//   try {
+//     const { id } = req.params;
 
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid borrow ID",
-      });
-    }
+//     if (!ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid borrow ID",
+//       });
+//     }
 
-    const borrow = await borrowsCollection.findOneAndDelete({
-      _id: new ObjectId(id),
-      userId: req.user.sub,
-      active: true,
-    });
+//     const borrow = await borrowsCollection.findOneAndDelete({
+//       _id: new ObjectId(id),
+//       userId: req.user.sub,
+//       active: true,
+//     });
 
-    if (!borrow) {
-      return res.status(404).json({
-        success: false,
-        message: "Borrow record not found",
-      });
-    }
+//     if (!borrow) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Borrow record not found",
+//       });
+//     }
 
-    const stockResult = await booksCollection.updateOne(
-      { _id: borrow.bookId },
-      { $inc: { availableCopies: 1 } }
-    );
+//     const stockResult = await booksCollection.updateOne(
+//       { _id: borrow.bookId },
+//       { $inc: { availableCopies: 1 } }
+//     );
 
-    if (stockResult.matchedCount === 0) {
-      await borrowsCollection.insertOne(borrow);
+//     if (stockResult.matchedCount === 0) {
+//       await borrowsCollection.insertOne(borrow);
 
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
-    }
+//       return res.status(404).json({
+//         success: false,
+//         message: "Book not found",
+//       });
+//     }
 
-    res.status(200).json({
-      success: true,
-      message: "Book returned successfully!",
-    });
-  } catch (error) {
-    console.error("Return Book Error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to return book",
-    });
-  }
-});
+//     res.status(200).json({
+//       success: true,
+//       message: "Book returned successfully!",
+//     });
+//   } catch (error) {
+//     console.error("Return Book Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to return book",
+//     });
+//   }
+// });
 
-// ==================== ROOT ====================
+// // ==================== ROOT ====================
 
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "BookNook Server is Running!",
-  });
-});
+// app.get("/", (req, res) => {
+//   res.json({
+//     success: true,
+//     message: "BookNook Server is Running!",
+//   });
+// });
 
 // ==================== START SERVER ====================
 
