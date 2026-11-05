@@ -2,8 +2,7 @@
 import express from "express";
 import "dotenv/config";
 import cors from "cors";
-import { MongoClient } from "mongodb";
-
+import { MongoClient, ObjectId } from "mongodb";
 const app = express();
 const PORT = 8000;
 
@@ -87,6 +86,7 @@ app.get("/books", async (req, res) => {
     });
   }
 });
+
 // Get Latest 6 Books
 app.get("/books/latest", async (req, res) => {
   try {
@@ -107,6 +107,43 @@ app.get("/books/latest", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch latest books",
+    });
+  }
+});
+// Get Single Book Details
+app.get("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const book = await booksCollection.findOne({
+      _id: new ObjectId(id),
+    });
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: book,
+    });
+
+  } catch (error) {
+    console.error("Book Details Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch book details",
     });
   }
 });
