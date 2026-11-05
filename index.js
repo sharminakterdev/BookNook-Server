@@ -3,6 +3,8 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
+import verifyToken from "./middlewares/verifyToken.js";
+
 const app = express();
 const PORT = 8000;
 
@@ -32,13 +34,21 @@ app.get("/test", (req, res) => {
   res.json({ message: "Backend is working!" });
 });
 
-app.post("/add-book", async (req, res) => {
+// Add New Book
+app.post("/books", async (req, res) => {
   try {
     console.log("Add Book API Called!");
 
     const bookData = req.body;
 
-    const totalCopies = Number(bookData.totalCopies || 5);
+    const totalCopies = Number(bookData.totalCopies);
+
+    if (!Number.isInteger(totalCopies) || totalCopies < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Total copies must be at least 1",
+      });
+    }
 
     const newBook = {
       ...bookData,
@@ -54,9 +64,8 @@ app.post("/add-book", async (req, res) => {
       message: "Book added successfully!",
       insertedId: result.insertedId,
     });
-
   } catch (error) {
-    console.error(error);
+    console.error("Add Book Error:", error);
 
     res.status(500).json({
       success: false,
@@ -147,11 +156,116 @@ app.get("/books/:id", async (req, res) => {
     });
   }
 });
+// PATCH /books/:id - Update a book
+app.patch("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const {
+      title,
+      author,
+      category,
+      image,
+      description,
+      totalCopies,
+    } = req.body;
+
+    const updatedBook = {
+      title,
+      author,
+      category,
+      image,
+      description,
+      totalCopies: Number(totalCopies),
+    };
+
+    if (
+      !Number.isInteger(updatedBook.totalCopies) ||
+      updatedBook.totalCopies < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Total copies must be at least 1",
+      });
+    }
+
+    const result = await booksCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedBook }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Book updated successfully!",
+    });
+  } catch (error) {
+    console.error("Update Book Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update book",
+    });
+  }
+});
+
+// DELETE /books/:id - Delete a book
+app.delete("/books/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
+
+    const result = await booksCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Book deleted successfully!",
+    });
+  } catch (error) {
+    console.error("Delete Book Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete book",
+    });
+  }
+});
 app.get("/", (req, res) => {
   res.send({ message: "Server is running fine" });
 });
-
+app.get("/protected", verifyToken, (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "JWT verified successfully!",
+    user: req.user,
+  });
+});
 connectToMongoDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running at ${PORT}`);
