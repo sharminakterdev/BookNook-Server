@@ -418,81 +418,81 @@ app.post("/borrows", verifyToken, async (req, res) => {
 
 // // ==================== GET MY BORROWS ====================
 
-// app.get("/borrows", verifyToken, async (req, res) => {
-//   try {
-//     const borrows = await borrowsCollection
-//       .find({
-//         userId: req.user.sub,
-//         active: true,
-//       })
-//       .sort({ createdAt: -1 })
-//       .toArray();
+app.get("/borrows", verifyToken, async (req, res) => {
+  try {
+    const borrows = await borrowsCollection
+      .find({
+        userId: req.user.sub,
+        active: true,
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
 
-//     res.status(200).json({
-//       success: true,
-//       data: borrows,
-//     });
-//   } catch (error) {
-//     console.error("Get Borrows Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to fetch borrowed books",
-//     });
-//   }
-// });
+    res.status(200).json({
+      success: true,
+      data: borrows,
+    });
+  } catch (error) {
+    console.error("Get Borrows Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch borrowed books",
+    });
+  }
+});
 
-// // ==================== RETURN BOOK ====================
+// ==================== RETURN BOOK ====================
 
-// app.delete("/borrows/:id", verifyToken, async (req, res) => {
-//   try {
-//     const { id } = req.params;
+app.delete("/borrows/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
 
-//     if (!ObjectId.isValid(id)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid borrow ID",
-//       });
-//     }
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid borrow ID",
+      });
+    }
 
-//     const borrow = await borrowsCollection.findOneAndDelete({
-//       _id: new ObjectId(id),
-//       userId: req.user.sub,
-//       active: true,
-//     });
+    const borrow = await borrowsCollection.findOneAndDelete({
+      _id: new ObjectId(id),
+      userId: req.user.sub,
+      active: true,
+    });
 
-//     if (!borrow) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Borrow record not found",
-//       });
-//     }
+    if (!borrow) {
+      return res.status(404).json({
+        success: false,
+        message: "Borrow record not found",
+      });
+    }
 
-//     const stockResult = await booksCollection.updateOne(
-//       { _id: borrow.bookId },
-//       { $inc: { availableCopies: 1 } }
-//     );
+    const stockResult = await booksCollection.updateOne(
+      { _id: borrow.bookId },
+      { $inc: { availableCopies: 1 } }
+    );
 
-//     if (stockResult.matchedCount === 0) {
-//       await borrowsCollection.insertOne(borrow);
+    if (stockResult.matchedCount === 0) {
+      await borrowsCollection.insertOne(borrow);
 
-//       return res.status(404).json({
-//         success: false,
-//         message: "Book not found",
-//       });
-//     }
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
 
-//     res.status(200).json({
-//       success: true,
-//       message: "Book returned successfully!",
-//     });
-//   } catch (error) {
-//     console.error("Return Book Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to return book",
-//     });
-//   }
-// });
+    res.status(200).json({
+      success: true,
+      message: "Book returned successfully!",
+    });
+  } catch (error) {
+    console.error("Return Book Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to return book",
+    });
+  }
+});
 
 // // ==================== ROOT ====================
 
