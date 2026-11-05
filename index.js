@@ -494,14 +494,14 @@ app.delete("/borrows/:id", verifyToken, async (req, res) => {
   }
 });
 
-// // ==================== ROOT ====================
+ // ==================== ROOT ====================
 
-// app.get("/", (req, res) => {
-//   res.json({
-//     success: true,
-//     message: "BookNook Server is Running!",
-//   });
-// });
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "BookNook Server is Running!",
+  });
+});
 
 // ==================== START SERVER ====================
 
