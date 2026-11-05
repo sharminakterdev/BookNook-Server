@@ -303,118 +303,118 @@ app.delete("/books/:id", verifyToken, async (req, res) => {
 
 // ==================== BORROW BOOK ====================
 
-// app.post("/borrows", verifyToken, async (req, res) => {
-//   let reservedBookId = null;
+app.post("/borrows", verifyToken, async (req, res) => {
+  let reservedBookId = null;
 
-//   try {
-//     const { bookId, borrowDate, returnDate } = req.body;
-//     const userId = req.user.sub;
+  try {
+    const { bookId, borrowDate, returnDate } = req.body;
+    const userId = req.user.sub;
 
-//     if (!ObjectId.isValid(bookId)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid book ID",
-//       });
-//     }
+    if (!ObjectId.isValid(bookId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book ID",
+      });
+    }
 
-//     const borrowDateValue = new Date(borrowDate);
-//     const returnDateValue = new Date(returnDate);
+    const borrowDateValue = new Date(borrowDate);
+    const returnDateValue = new Date(returnDate);
 
-//     if (
-//       !borrowDate ||
-//       !returnDate ||
-//       Number.isNaN(borrowDateValue.getTime()) ||
-//       Number.isNaN(returnDateValue.getTime()) ||
-//       returnDateValue <= borrowDateValue
-//     ) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Please provide valid borrow and return dates",
-//       });
-//     }
+    if (
+      !borrowDate ||
+      !returnDate ||
+      Number.isNaN(borrowDateValue.getTime()) ||
+      Number.isNaN(returnDateValue.getTime()) ||
+      returnDateValue <= borrowDateValue
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid borrow and return dates",
+      });
+    }
 
-//     const bookObjectId = new ObjectId(bookId);
+    const bookObjectId = new ObjectId(bookId);
 
-//     const existingBorrow = await borrowsCollection.findOne({
-//       bookId: bookObjectId,
-//       userId,
-//       active: true,
-//     });
+    const existingBorrow = await borrowsCollection.findOne({
+      bookId: bookObjectId,
+      userId,
+      active: true,
+    });
 
-//     if (existingBorrow) {
-//       return res.status(409).json({
-//         success: false,
-//         message: "You have already borrowed this book",
-//       });
-//     }
+    if (existingBorrow) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already borrowed this book",
+      });
+    }
 
-//     const stockResult = await booksCollection.updateOne(
-//       {
-//         _id: bookObjectId,
-//         availableCopies: { $gt: 0 },
-//       },
-//       {
-//         $inc: { availableCopies: -1 },
-//       }
-//     );
+    const stockResult = await booksCollection.updateOne(
+      {
+        _id: bookObjectId,
+        availableCopies: { $gt: 0 },
+      },
+      {
+        $inc: { availableCopies: -1 },
+      }
+    );
 
-//     if (stockResult.modifiedCount === 0) {
-//       return res.status(409).json({
-//         success: false,
-//         message: "This book is not available",
-//       });
-//     }
+    if (stockResult.modifiedCount === 0) {
+      return res.status(409).json({
+        success: false,
+        message: "This book is not available",
+      });
+    }
 
-//     reservedBookId = bookObjectId;
+    reservedBookId = bookObjectId;
 
-//     const book = await booksCollection.findOne({
-//       _id: bookObjectId,
-//     });
+    const book = await booksCollection.findOne({
+      _id: bookObjectId,
+    });
 
-//     const borrowData = {
-//       bookId: bookObjectId,
-//       bookTitle: book.title,
-//       bookImage: book.image,
-//       userId,
-//       userName: req.user.name,
-//       userEmail: req.user.email,
-//       borrowDate: borrowDateValue,
-//       returnDate: returnDateValue,
-//       active: true,
-//       createdAt: new Date(),
-//     };
+    const borrowData = {
+      bookId: bookObjectId,
+      bookTitle: book.title,
+      bookImage: book.image,
+      userId,
+      userName: req.user.name,
+      userEmail: req.user.email,
+      borrowDate: borrowDateValue,
+      returnDate: returnDateValue,
+      active: true,
+      createdAt: new Date(),
+    };
 
-//     const result = await borrowsCollection.insertOne(borrowData);
+    const result = await borrowsCollection.insertOne(borrowData);
 
-//     reservedBookId = null;
+    reservedBookId = null;
 
-//     res.status(201).json({
-//       success: true,
-//       message: "Book borrowed successfully!",
-//       insertedId: result.insertedId,
-//     });
-//   } catch (error) {
-//     if (reservedBookId) {
-//       await booksCollection.updateOne(
-//         { _id: reservedBookId },
-//         { $inc: { availableCopies: 1 } }
-//       );
-//     }
+    res.status(201).json({
+      success: true,
+      message: "Book borrowed successfully!",
+      insertedId: result.insertedId,
+    });
+  } catch (error) {
+    if (reservedBookId) {
+      await booksCollection.updateOne(
+        { _id: reservedBookId },
+        { $inc: { availableCopies: 1 } }
+      );
+    }
 
-//     if (error.code === 11000) {
-//       return res.status(409).json({
-//         success: false,
-//         message: "You have already borrowed this book",
-//       });
-//     }
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already borrowed this book",
+      });
+    }
 
-//     console.error("Borrow Book Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to borrow book",
-//     });
-//   }
-// });
+    console.error("Borrow Book Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to borrow book",
+    });
+  }
+});
 
 // // ==================== GET MY BORROWS ====================
 
