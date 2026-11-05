@@ -34,13 +34,13 @@ app.get("/test", (req, res) => {
   res.json({ message: "Backend is working!" });
 });
 
-// Add New Book
-app.post("/books", async (req, res) => {
+
+// Add New Book - Protected Route
+app.post("/books", verifyToken, async (req, res) => {
   try {
-    console.log("Add Book API Called!");
+    console.log("Secure Add Book API Called!");
 
     const bookData = req.body;
-
     const totalCopies = Number(bookData.totalCopies);
 
     if (!Number.isInteger(totalCopies) || totalCopies < 1) {
@@ -51,7 +51,17 @@ app.post("/books", async (req, res) => {
     }
 
     const newBook = {
-      ...bookData,
+      title: bookData.title,
+      author: bookData.author,
+      category: bookData.category,
+      image: bookData.image,
+      description: bookData.description,
+
+      // Verified user information from JWT
+      userId: req.user.sub,
+      userName: req.user.name,
+      userEmail: req.user.email,
+
       totalCopies,
       availableCopies: totalCopies,
       createdAt: new Date(),
@@ -65,7 +75,7 @@ app.post("/books", async (req, res) => {
       insertedId: result.insertedId,
     });
   } catch (error) {
-    console.error("Add Book Error:", error);
+    console.error("Secure Add Book Error:", error);
 
     res.status(500).json({
       success: false,
