@@ -65,6 +65,28 @@ app.post("/add-book", async (req, res) => {
     });
   }
 });
+// Get All Books
+app.get("/books", async (req, res) => {
+  try {
+    const allBooks = await booksCollection
+      .find()
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.status(200).json({
+      success: true,
+      data: allBooks,
+    });
+
+  } catch (error) {
+    console.error("All Books Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch books",
+    });
+  }
+});
 // Get Latest 6 Books
 app.get("/books/latest", async (req, res) => {
   try {
